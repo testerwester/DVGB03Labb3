@@ -21,6 +21,7 @@ log = logging.getLogger(__name__)
 
 from math import inf
 
+
 class AdjacencyList:
     '''
     A linked-list implementation of an adjacency list that keeps its nodes and
@@ -142,13 +143,16 @@ class AdjacencyList:
 
         Returns an adjacency list head.
         '''
+        if self.head().is_empty():
+            return self.head()
+
         if name == self.name():
             return self.tail()
-        if name == self.tail().name():
-            return self.cons(self.tail().tail())
 
-        elif name > self.tail().name():
+        elif name > self.name():
             return self.cons(self.tail().delete_node(name))
+
+        return self.head()
 
 
 
@@ -196,7 +200,8 @@ class AdjacencyList:
 
         Pre: `dst` is a member of this adjacency list.
         '''
-
+        if self.head().is_empty():
+            return self.head()
         if src == self.name():
             self.set_edges(self.edges().add(dst, weight))
 
@@ -213,7 +218,13 @@ class AdjacencyList:
 
         Returns an adjacency list head.
         '''
-        log.info("TODO: delete_edge()")
+        if self.head().is_empty():
+            return self.head()
+        if self.name() == src:
+            self.set_edges(self.edges().delete(dst))
+        elif src > self.name():
+            self.tail().delete_edge(src, dst)
+
         return self.head()
 
     def delete_edges(self, name):
@@ -222,13 +233,19 @@ class AdjacencyList:
 
         Returns an adjacency list head.
         '''
-        log.info("TODO: delete_edges()")
+        if not self.head().is_empty():
+            self.set_edges(self.edges().delete(name))
+            self.tail().delete_edges(name)
         return self.head()
+        
+
 
     def find_edge(self, src, dst):
         '''
         Returns True if there's an edge from node `src` to node `dst`.
         '''
+        if self.head().is_empty():
+            return False
         if src == self.name():
             return self.edges().find(dst)
         else:
@@ -238,16 +255,23 @@ class AdjacencyList:
         '''
         Returns the number of edges.
         '''
-        log.info("TODO: edge_cardinality()")
-        return 0
+        if self.head().is_empty():
+            return 0
+        else:
+            return self.edges().cardinality() + self.tail().edge_cardinality()
 
     def self_loops(self):
         '''
         Returns the number of loops in this adjacency list.  Note that a loop is
         defined as a node that has an edge towards itself, e.g., A->A.
         '''
-        log.info("TODO: self_loops()")
-        return 0
+        if self.head().is_empty():
+            return 0
+        else: 
+            if self.edges().find(self.name()) == True:
+                return 1 + self.tail().self_loops()
+            else:
+                return self.tail().self_loops()
 
     def adjacency_matrix(self):
         '''
@@ -285,9 +309,73 @@ class AdjacencyList:
 
         # In case you'd like to create an inf-initialized n x n matrix
         n = self.node_cardinality()
+        
         matrix = [ [inf]*n for i in range(n) ]
-        log.info("TODO: adjacency_matrix()")
+
+        listOfNodes = self.getListOfNames()
+        tmpNode = self.head()
+        counter = 0
+        while not tmpNode.is_empty():
+            tmpEdge = tmpNode.edges()
+            for i in range(n):
+                if not tmpEdge.is_empty():
+                    if tmpEdge.dst() == listOfNodes[i]:
+                        matrix[counter][i] = tmpEdge.weight()
+                        tmpEdge = tmpEdge.tail()
+                else:
+                    break
+
+            tmpNode = tmpNode.tail()
+            counter += 1
+
+
         return matrix
+
+
+
+    #*******************************************
+    #           helper method
+    #*******************************************
+    def getListOfNames(self):
+        listOfNodes = []
+        tmpNode = self.head()
+        while not tmpNode.is_empty():
+            listOfNodes.append(tmpNode.name())
+            tmpNode = tmpNode.tail()
+        return listOfNodes
+
+    def getListOfNodes(self):
+        listOfNodeHeads = []
+        tmpNode = self.head()
+        while not tmpNode.is_empty():
+            listOfNodeHeads.append(tmpNode.head())
+            tmpNode = tmpNode.tail()
+        return listOfNodeHeads
+
+
+    def getListOfEdges(self):
+        listOfEdges = []
+        tmpEdge = self.edges()
+
+        while not tmpEdge.is_empty():
+            listOfEdges.append(tmpEdge.head())
+            tmpEdge = tmpEdge.tail()
+        
+        return listOfEdges
+
+    def getNode(self, name):
+        '''
+        Returns Node if the node named `name` is a member.
+        '''
+        if self.is_empty():
+            return 0
+        if name == self.head().name():
+            return self.head()
+        return self.tail().getNode(name)
+
+    #****************************************
+    #           /helper method
+    #***************************************
 
     def list_nodes(self):
         '''
@@ -389,10 +477,14 @@ class Edge:
         Returns an edge head.
         '''
         #When the edge head is empty
-        if self.head().is_empty() or self.dst() == dst:
+        if self.head().is_empty():
             self.set_dst(dst)
             self.set_weight(weight)
             self._tail = Edge()
+            return self.head()
+        #When edge already exists - Only update weight in existing edge.
+        elif  self.dst() == dst:
+            self.set_weight(weight)
             return self.head()
         
         #When dst is lower than existing edges
@@ -411,7 +503,16 @@ class Edge:
 
         Returns an edge head.
         '''
-        log.info("TODO: delete()")
+
+        if self.is_empty():
+            return self.head()
+
+        if self.dst() == dst:
+            return self.tail()
+        
+        elif dst > self.dst():
+            return self.cons(self.tail().delete(dst))
+
         return self.head()
 
     def find(self, dst):
@@ -429,8 +530,10 @@ class Edge:
         '''
         Returns the number of edges in this sequence.
         '''
-        log.info("TODO: edge cardinality()")
-        return 0
+        if self.head().is_empty():
+            return 0
+        else: 
+            return (1 + self.tail().cardinality())
 
     def list(self, src):
         '''
