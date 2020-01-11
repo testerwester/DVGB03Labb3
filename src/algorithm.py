@@ -6,7 +6,9 @@ import logging
 log = logging.getLogger(__name__)
 
 from math import inf
+import copy #For use of copy/deepcopy
 from adjlist import AdjacencyList
+from math import inf
 
 def warshall(adjlist):
     '''
@@ -15,8 +17,17 @@ def warshall(adjlist):
 
     Pre: adjlist is not empty.
     '''
-    log.info("TODO: warshall()")
-    return [[]]
+    
+    nodeSize = adjlist.node_cardinality()
+    matrix = [None]*nodeSize
+
+    #Deepcopy as to make sure that no values are distorted
+    tmpMatrix = copy.deepcopy(floyd(adjlist))
+    for i in range(nodeSize):
+      matrix[i] = [False if x == inf else True for x in tmpMatrix[i]]
+
+    return matrix
+
 
 def floyd(adjlist):
     '''
@@ -24,8 +35,22 @@ def floyd(adjlist):
 
     Pre: adjlist is not empty.
     '''
-    log.info("TODO: floyd()")
-    return [[]]
+
+    nodeSize = adjlist.node_cardinality()
+    matrix = adjlist.adjacency_matrix() #Initiates matrix with adjecency matrix
+
+    #Deepcopy as to make sure that no values are distorted
+    tmpMatrix = copy.deepcopy(matrix)
+
+    for k in range(nodeSize):
+      for i in range(nodeSize):
+        if k == i:
+          tmpMatrix[k][i] = 0
+        for j in range(nodeSize):
+          tmpMatrix[i][j] = min(tmpMatrix[i][j], (tmpMatrix[i][k] + tmpMatrix[k][j]))
+
+
+    return tmpMatrix
 
 def dijkstra(adjlist, start_node):
     '''
@@ -53,67 +78,54 @@ def dijkstra(adjlist, start_node):
     d: [ None, 1, 2]
     e: [ None, 'a', 'a' ]
     '''
-    d = []
-    e = []
+    d = [None] * adjlist.node_cardinality()
+    e = [None] * adjlist.node_cardinality()
 
     q = []# *adjlist.node_cardinality() #Iniates list to use index
     s = []# * adjlist.node_cardinality() #Initiates list to use index
-    
-    #Get all nodes
-    q.extend(adjlist.getListOfNodes())
 
-    #Initiate nodes - can be moved to function 
-    for node in q:
-      node.set_info([inf, None])
-      if node.name() == start_node:
-        tmpNode = node
-        tmpNode.set_info([0, None])
+    loadAndInit(adjlist, q, start_node, d, e)
 
     #MAIN LOOP
-
-    #Sort list and pop- can be moved to function
     while len(q) != 0:
-      q.sort(key=lambda node: node.info()[0], reverse=False)
-      for index, node in enumerate(q):
-        print(f"{index}: {node.name()}")
+      q.sort(key=lambda node: node.info()[0])
       u = q.pop(0)
       s.append(u)
-      print(f"Chosen node is: {u.name()}") #DEBUG
-      print(u.info()[0])
-
       #Hämta ut alla nodes som u har edges mot
-      # 1. Hämta alla edges
-      for edge in u.getListOfEdges():
-        print("Trying") #DEBUG
-        print(adjlist.getNode(edge.dst()).name()) #Doesn't really improve bigO...
-        v = adjlist.getNode(edge.dst())    #Doesn't really improve bigO...
-        #RELAX
-        if v.info()[0] > u.info()[0] + edge.weight():
-          print("Changing values") #DEBUG
-          v.set_info([(u.info()[0] + edge.weight()), u.name()])
+      for edge in u.getListOfEdges(): #Gets all edges and loops through them with help of DST
+        print(f"Running from node: {u.name()}")
+        v = adjlist.getNode(edge.dst())    #Doesn't really improve bigO... but searches and finds correct node from graph
+        relax(v, u, edge.weight()) #Alters v.key value if actual weight from u to v is lower
 
 
 
     # 1. Sortera S
     # 2. Sätt in rätt värde på rätt plats
-    s.sort(key=lambda node: node.name()[0], reverse=False)
+    s.sort(key=lambda node: node.name())
     for index, node in enumerate(s):
       if node.info()[0] == 0:
-        print(f"Setting None to node: {node.name()} at count {index}")
-        d.insert(index, None)
-        e.insert(index, None)
+        d[index] = None
+        e[index] = None
       else:
-        d.insert(index, node.info()[0])
-        e.insert(index, node.info()[1])
-
-    print(d)
-    print(e)
+        d[index] = node.info()[0]
+        e[index] = node.info()[1]
 
     return d, e
 
-def addToSortedList(list, node):
-  sortedList = list
-  return sortedList
+def relax(v, u, weight):
+  if v.info()[0] > u.info()[0] + weight:
+    v.set_info([(u.info()[0] + weight), u.name()])
+
+def loadAndInit(adjNode, targetList, start_node, distanceList, edgeList):
+  targetList.extend(adjNode.getListOfNodes())
+  for index, node in enumerate(targetList):
+    print(node.name())
+    distanceList[index] = None
+    edgeList[index] = None
+    if node.name() == start_node:
+      node.set_info([0, None, None])
+    else:
+      node.set_info([inf, None, None])
 
 def prim(adjlist, start_node):
     '''
