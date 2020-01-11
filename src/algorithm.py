@@ -93,7 +93,6 @@ def dijkstra(adjlist, start_node):
       s.append(u)
       #Hämta ut alla nodes som u har edges mot
       for edge in u.getListOfEdges(): #Gets all edges and loops through them with help of DST
-        print(f"Running from node: {u.name()}")
         v = adjlist.getNode(edge.dst())    #Doesn't really improve bigO... but searches and finds correct node from graph
         relax(v, u, edge.weight()) #Alters v.key value if actual weight from u to v is lower
 
@@ -119,7 +118,6 @@ def relax(v, u, weight):
 def loadAndInit(adjNode, targetList, start_node, distanceList, edgeList):
   targetList.extend(adjNode.getListOfNodes())
   for index, node in enumerate(targetList):
-    print(node.name())
     distanceList[index] = None
     edgeList[index] = None
     if node.name() == start_node:
@@ -153,43 +151,30 @@ def prim(adjlist, start_node):
     l: [ None, 1, 1]
     c: [ None, 'a', 'b' ]
     '''
-    
     l = [None] * adjlist.node_cardinality() #Lowcost, weights
     c = [None] * adjlist.node_cardinality() #Closest, parents
-    vArr = [] #Contains all nodes in graph
-    eArr = [] #Contains list with all actual edges that can be added in current tree
+    q = [] #Tmpqueue to hold nodes
 
-    #Add all nodevalues to list and initiates info as False
+    #Inits all arrays and values with None, 0 and Inf etc
+    loadAndInit(adjlist, q, start_node, l ,c)
+
+    while len(q) != 0:
+      q.sort(key=lambda node: node.info()[0]) #Sorts to pop the node with the smalles key
+      u = q.pop(0)
+      for edge in (u.getListOfEdges()):
+        dstNode = adjlist.getNode(edge.dst()) #Gets real node based on edge.dst
+        if dstNode in q and edge.weight() < dstNode.info()[0]:
+          dstNode.set_info([edge.weight(), u.name()]) #Sets new values if dstNode is contained in q and the key is lager than weight
+
     for index, node in enumerate(adjlist.getListOfNodes()):
-      tmpNode = AdjacencyList(node.name(), False)
-      tmpNode.set_edges(node.edges())
-      vArr.append(tmpNode)
-      if vArr[index].name() == start_node:
-        vArr[index].set_info(True) #Sets info to true to imply that start_node is member of MST
-        eArr.extend(vArr[index].edges().list(vArr[index].name())) #Adds edges from startnode
+      if node.info()[0] == 0:
+        l[index] = None
+        c[index] = None
+      else:
+        l[index] = node.info()[0]
+        c[index] = node.info()[1]
 
-      
-    while len(eArr) != 0:  #Ändra till whileloop
-      minEdgeIndex = extractMin(eArr) # Hämtar ut minsta edge bland tillagda
-      minEdgeDST = eArr[extractMin(eArr)][1] #Gets dst of least value
-
-      for index, node in enumerate(vArr):
-        if node.name() == minEdgeDST and node.info() is False:
-          node.set_info(True)
-          l[vArr.index(node)] = eArr[minEdgeIndex][2] #Adds weight value to l array
-          c[vArr.index(node)] = eArr[minEdgeIndex][0] #Adds parent name to c array
-          eArr.extend(node.edges().list(node.name())) #Extends new edges from found node to eArr
-          eArr.remove(eArr[minEdgeIndex]) #Removes edge from eArr
-
-        elif node.name() == minEdgeDST and node.info() is True:
-          eArr.remove(eArr[minEdgeIndex])
-          #Ta bort edge
-
-
-    #Kan ändra index vid lägg till l+c för att snygga till. Använd enumerate
-    #Borde kunna fixa till init-loopen, fixa. Behöver inte använda tmp-värden
     return l, c
-
 
 
 #Pre: Requires eList to not be empty, and be a 2d-list
