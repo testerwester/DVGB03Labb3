@@ -1,19 +1,3 @@
-#!/usr/bin/env python3
-
-#
-# Recommended order to get started:
-# 1) AdjacencyList.{
-#   OK - add_node,
-#   OK - node_cardinality}
-
-
-# 2) AdjacencyList.
-#   NOT OK - _add_edge, 
-#   NOT OK - Edge.add - note: if you run in debug mode, you
-# will get all edges printed when selecting 'v: view' in the menu.
-# 3) AdjacencyList.find_edge, Edge.find
-#
-
 import sys
 import logging
 
@@ -122,7 +106,6 @@ class AdjacencyList:
 
         Returns an adjacency list head.
         '''
-        
         if self.is_empty():
             return AdjacencyList(name, info)
 
@@ -336,7 +319,12 @@ class AdjacencyList:
     #*******************************************
     #           helper method
     #*******************************************
+
     def getListOfNames(self):
+        '''
+        Pre: Self is a node
+        Post: Return a list of all node.name() from self to the last node
+        '''
         listOfNodes = []
         tmpNode = self.head()
         while not tmpNode.is_empty():
@@ -345,6 +333,10 @@ class AdjacencyList:
         return listOfNodes
 
     def getListOfNodes(self):
+        '''
+        Pre: Self is a node
+        Post: Returns a list of nodes(Not just values)
+        '''
         listOfNodeHeads = []
         tmpNode = self.head()
         while not tmpNode.is_empty():
@@ -354,6 +346,10 @@ class AdjacencyList:
 
 
     def getListOfEdges(self):
+        '''
+        Pre: Self is an edge
+        Post: Returns a list of edges(Nost just values)
+        '''
         listOfEdges = []
         tmpEdge = self.edges()
 

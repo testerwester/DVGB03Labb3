@@ -17,12 +17,19 @@ def warshall(adjlist):
 
     Pre: adjlist is not empty.
     '''
-    
-    nodeSize = adjlist.node_cardinality()
-    matrix = [None]*nodeSize
+    nodeSize = adjlist.node_cardinality() #Number of nodes
+    matrix = [[None]*nodeSize]*nodeSize #Matrix for end result
+    tmpMatrix = copy.deepcopy(adjlist.adjacency_matrix()) #Temporary matrix for calculations of algorithm
 
-    #Deepcopy as to make sure that no values are distorted
-    tmpMatrix = copy.deepcopy(floyd(adjlist))
+    #Warshall
+    for k in range(nodeSize):
+      for i in range(nodeSize):
+        if k == i:
+          tmpMatrix[k][i] = 0
+        for j in range(nodeSize):
+          tmpMatrix[i][j] = min(tmpMatrix[i][j], (tmpMatrix[i][k] + tmpMatrix[k][j]))
+
+    #Swaps int/inf to True/False
     for i in range(nodeSize):
       matrix[i] = [False if x == inf else True for x in tmpMatrix[i]]
 
@@ -48,6 +55,7 @@ def floyd(adjlist):
           tmpMatrix[k][i] = 0
         for j in range(nodeSize):
           tmpMatrix[i][j] = min(tmpMatrix[i][j], (tmpMatrix[i][k] + tmpMatrix[k][j]))
+          
 
 
     return tmpMatrix
@@ -81,28 +89,30 @@ def dijkstra(adjlist, start_node):
     d = [None] * adjlist.node_cardinality()
     e = [None] * adjlist.node_cardinality()
 
-    q = []# *adjlist.node_cardinality() #Iniates list to use index
-    s = []# * adjlist.node_cardinality() #Initiates list to use index
+    q = []# tmp queue to sort and pick node for loop
+    s = []# Values that pop from q are added here to contain order of nodes and replicated for d and e
 
-    loadAndInit(adjlist, q, start_node, d, e)
+    #Initates values
+    loadAndInit(adjlist, q, start_node)
 
     #MAIN LOOP
     while len(q) != 0:
       q.sort(key=lambda node: node.info()[0])
       u = q.pop(0)
+
       s.append(u)
-      #Hämta ut alla nodes som u har edges mot
+      #Fetches all edges from current node - Tries to relax them if v has not been visited
       for edge in u.getListOfEdges(): #Gets all edges and loops through them with help of DST
         v = adjlist.getNode(edge.dst())    #Doesn't really improve bigO... but searches and finds correct node from graph
-        relax(v, u, edge.weight()) #Alters v.key value if actual weight from u to v is lower
+        #Relaxes edge if v is not visited
+        if v in q: 
+          relax(v, u, edge.weight()) #Alters v.key value if actual weight from u to v is lower
 
 
-
-    # 1. Sortera S
-    # 2. Sätt in rätt värde på rätt plats
+    #Based on s array, sets values on correct spot in d and e arrays.
     s.sort(key=lambda node: node.name())
     for index, node in enumerate(s):
-      if node.info()[0] == 0:
+      if node.info()[0] == 0: #Special case for startnode
         d[index] = None
         e[index] = None
       else:
@@ -111,15 +121,26 @@ def dijkstra(adjlist, start_node):
 
     return d, e
 
+#Relax function that compares an edge dst info with (src info + weight) - Swaps values if src combination is lower
 def relax(v, u, weight):
+  '''
+  Pre: v and u are nodes and weight is an integer
+  Post: Alters info of v if (u.info + weight) is lower can current v.info
+  '''
   if v.info()[0] > u.info()[0] + weight:
     v.set_info([(u.info()[0] + weight), u.name()])
 
-def loadAndInit(adjNode, targetList, start_node, distanceList, edgeList):
+
+#Initation function for algorithms that use an array of nodes
+
+def loadAndInit(adjNode, targetList, start_node):
+  '''
+  Pre: adjNode = root to graph, targetList = list of nodes, start_node = value of startnode
+  Post: targetList is an array of all nodes in graph, start_node in array has special value of 0 instead of inf for startnode detection
+  Post: All nodes in array have info updates with correct values
+  '''
   targetList.extend(adjNode.getListOfNodes())
-  for index, node in enumerate(targetList):
-    distanceList[index] = None
-    edgeList[index] = None
+  for node in (targetList):
     if node.name() == start_node:
       node.set_info([0, None, None])
     else:
@@ -156,7 +177,7 @@ def prim(adjlist, start_node):
     q = [] #Tmpqueue to hold nodes
 
     #Inits all arrays and values with None, 0 and Inf etc
-    loadAndInit(adjlist, q, start_node, l ,c)
+    loadAndInit(adjlist, q, start_node)
 
     while len(q) != 0:
       q.sort(key=lambda node: node.info()[0]) #Sorts to pop the node with the smalles key
@@ -166,6 +187,7 @@ def prim(adjlist, start_node):
         if dstNode in q and edge.weight() < dstNode.info()[0]:
           dstNode.set_info([edge.weight(), u.name()]) #Sets new values if dstNode is contained in q and the key is lager than weight
 
+    #Adds values from node.info to correct place in l and c
     for index, node in enumerate(adjlist.getListOfNodes()):
       if node.info()[0] == 0:
         l[index] = None
@@ -176,24 +198,6 @@ def prim(adjlist, start_node):
 
     return l, c
 
-
-#Pre: Requires eList to not be empty, and be a 2d-list
-#Post: Returns index in eList with lowest weight
-def extractMin(eList):
-  minVal = sys.maxsize
-  smallest_index = -1
-  for i in range(len(eList)):
-    if eList[i][2] < minVal:
-      minVal = eList[i][2]
-      smallest_index = i
-  
-  return smallest_index
-
-
-def cleanup(somelist):
-  returnList = [y for y in somelist if y != inf]
-  return returnList
-      
 
 
 if __name__ == "__main__":
